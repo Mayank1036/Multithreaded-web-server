@@ -2,7 +2,6 @@
 
 [![Language](https://img.shields.io/badge/Language-Java_17+-ED8B00?style=for-the-badge&logo=java&logoColor=white)](https://www.java.com/)
 [![Testing Tool](https://img.shields.io/badge/Load_Testing-Apache_JMeter_5.6.3-D22128?style=for-the-badge&logo=apachejmeter&logoColor=white)](https://jmeter.apache.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.style=for-the-badge)](#license)
 
 A high-concurrency, multi-threaded Web Server built from scratch in core Java using raw TCP Sockets, `ServerSocket`, and Java functional streams. This repository includes a multi-threaded Client simulator as well as an automated **Apache JMeter load testing strategy** capable of processing over **23,000 requests/second**.
 
