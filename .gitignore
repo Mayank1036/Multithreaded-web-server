@@ -1,0 +1,16 @@
+# target directory / compiled class files
+*.class
+bin/
+out/
+
+# JMeter logs and result binary dumps
+*.log
+*.jtl
+*.hprof
+
+# IDE / System metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+New Folder/
