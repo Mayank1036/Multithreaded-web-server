@@ -1,56 +1,63 @@
-# ⚡ Multithreaded TCP Server in Java
+# ⚡ High-Performance Multithreaded TCP Server in Java
 
-### A Low-Level Networking & Concurrent Connection Handling Project
+### Low-Level Network Programming | Concurrent Connection Handling | Performance Benchmarking
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Java-17%2B-orange?style=for-the-badge&logo=openjdk&logoColor=white" />
+  <img src="https://img.shields.io/badge/Language-Java_17%2B-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
   <img src="https://img.shields.io/badge/Networking-TCP-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Concurrency-Multithreading-green?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Testing-Apache%20JMeter-red?style=for-the-badge&logo=apachejmeter" />
+  <img src="https://img.shields.io/badge/Concurrency-Multithreading-2E8B57?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Load_Testing-Apache_JMeter_5.6.3-D22128?style=for-the-badge&logo=apachejmeter&logoColor=white" />
 </p>
 
 <p align="center">
-  <b>Built from scratch using Core Java, Java Threads, TCP Sockets, and Apache JMeter.</b>
+  <b>Built from scratch using Core Java, TCP Sockets, Java Threads, and Apache JMeter.</b>
 </p>
 
 ---
 
-## 📌 Overview
+## 📌 Project Overview
 
-**Multithreaded TCP Server** is a low-level networking project developed using Core Java to understand how servers establish network connections, handle multiple clients, manage concurrent execution, and communicate over TCP.
+This project implements a **multithreaded TCP server from scratch using Core Java**, demonstrating how network servers establish connections, handle multiple clients concurrently, manage I/O resources, and respond to incoming communication requests.
 
-Instead of relying on frameworks such as Spring Boot, Netty, or application servers, this project uses Java's built-in networking and concurrency APIs to implement the connection-handling mechanism from the ground up.
+Instead of relying on high-level backend frameworks such as Spring Boot, Netty, or external application servers, the implementation uses Java's native networking APIs, including `ServerSocket` and `Socket`, to understand the underlying mechanics of client-server communication.
 
-The server listens for incoming TCP connections on port `8010`. Whenever a client establishes a connection, the server accepts the connection and creates a dedicated worker thread to handle that client independently.
+The server listens on port `8010`, continuously accepts incoming TCP connections, and delegates each accepted connection to an independent worker thread using a **Thread-per-Connection architecture**.
 
-A separate multithreaded client simulator generates concurrent connections, while Apache JMeter is used to evaluate the server under load.
+The repository also includes:
 
-### 🎯 Primary Objectives
+- A multithreaded Java client simulator for generating concurrent connections.
+- A functional connection handler implemented using Java's `Consumer<Socket>` interface and lambda expressions.
+- Resource-safe socket handling using Java's try-with-resources mechanism.
+- An Apache JMeter test suite for load testing and performance evaluation.
 
-- Understand TCP client-server communication at the socket level.
-- Implement concurrent connection handling using Java multithreading.
-- Explore how operating systems and Java manage multiple network connections.
-- Understand thread-per-connection architecture.
-- Practice safe resource management and exception handling.
-- Evaluate server performance using load testing and benchmarking.
-- Develop a foundation for understanding scalable backend and distributed systems.
+### 🎯 Engineering Objectives
+
+- Understand TCP/IP networking and socket-level communication.
+- Implement concurrent client handling using Java multithreading.
+- Explore blocking I/O and thread lifecycle management.
+- Understand the relationship between concurrency, throughput, and latency.
+- Practice resource management in network applications.
+- Evaluate server performance through load testing.
+- Understand the scalability trade-offs of thread-per-connection architectures.
 
 ---
 
 ## 🏗️ System Architecture
 
-The application follows a **Thread-per-Connection architecture**.
+The server follows a **Thread-per-Connection concurrency model**.
 
-Each incoming client connection is accepted by the main server thread and delegated to an independent worker thread.
+A single main server thread continuously listens for incoming connections. Whenever a client connects, the server accepts the connection and creates a dedicated worker thread to process that client independently.
 
-### Architecture Diagram
+### High-Level Architecture
 
 ```mermaid
 flowchart TD
-    A["Client Applications"] --> B["TCP Connection Requests"]
+    A["Multiple Client Applications"] --> B["TCP Connection Requests"]
+    
     B --> C["ServerSocket :8010"]
     C --> D["Main Server Thread"]
-    D --> E["accept()"]
+    
+    D --> E["accept() - Blocking I/O"]
     
     E --> F["Client Socket 1"]
     E --> G["Client Socket 2"]
@@ -60,13 +67,13 @@ flowchart TD
     G --> J["Worker Thread 2"]
     H --> K["Worker Thread N"]
     
-    I --> L["Connection Handler"]
-    J --> M["Connection Handler"]
-    K --> N["Connection Handler"]
+    I --> L["Consumer<Socket> Handler"]
+    J --> M["Consumer<Socket> Handler"]
+    K --> N["Consumer<Socket> Handler"]
     
-    L --> O["Send Server Response"]
-    M --> P["Send Server Response"]
-    N --> Q["Send Server Response"]
+    L --> O["PrintWriter Response"]
+    M --> P["PrintWriter Response"]
+    N --> Q["PrintWriter Response"]
     
     O --> R["Client 1"]
     P --> S["Client 2"]
@@ -78,37 +85,39 @@ flowchart TD
 | Component | Responsibility |
 |---|---|
 | Client | Initiates TCP connections |
-| ServerSocket | Listens for incoming connections |
+| ServerSocket | Listens for incoming TCP connections |
 | Main Server Thread | Accepts incoming connections |
-| Socket | Represents an established client-server connection |
-| Worker Thread | Handles an individual client connection |
-| Consumer | Encapsulates the connection-handling logic |
-| PrintWriter | Sends text-based responses to clients |
-| Apache JMeter | Generates load and measures performance |
+| `accept()` | Blocks until a connection is established |
+| Socket | Represents an established client connection |
+| Worker Thread | Processes an individual client connection |
+| Consumer | Encapsulates connection-handling logic |
+| PrintWriter | Sends text-based responses |
+| Apache JMeter | Generates load and collects performance measurements |
 
 ---
 
-## 🔄 How the Server Works Internally
+## 🔄 Internal Working: Connection Lifecycle
 
-Understanding the complete lifecycle of a connection is essential to understanding this project.
+Understanding the lifecycle of a client connection is central to understanding this implementation.
 
 ### 1. Server Initialization
 
-The server creates a `ServerSocket` bound to port `8010`.
+The server initializes a `ServerSocket` on port `8010`.
 
 ```java
 ServerSocket serverSocket = new ServerSocket(8010);
 ```
 
-**What is ServerSocket?**
+**What happens internally?**
 
-`ServerSocket` is a Java networking class that allows a server to listen for incoming TCP connection requests.
+- A server-side TCP listening socket is created.
+- The socket is bound to the specified port.
+- The operating system manages incoming connection requests.
+- The server becomes ready to accept client connections.
 
-It acts as the entry point for client connections.
+`ServerSocket` is responsible for accepting connections, not directly exchanging application data with clients.
 
-When a client connects, the server can accept that connection and obtain a corresponding `Socket` object.
-
-### 2. Listening for Connections
+### 2. Accepting Incoming Connections
 
 ```java
 while (true) {
@@ -116,20 +125,18 @@ while (true) {
 }
 ```
 
-The server continuously listens for incoming connections.
+The server continuously waits for incoming connections.
 
-**What does accept() do?**
+**Understanding `accept()`:**
 
-- Waits for an incoming TCP connection.
-- Blocks the calling thread until a connection is established.
-- Returns a new `Socket` representing the connected client.
-- Allows the server to communicate with that particular client.
+- It is a blocking operation.
+- The calling thread waits until a client establishes a connection.
+- It returns a new `Socket` representing the established connection.
+- The returned socket is used for communication with that particular client.
 
-This is called a blocking I/O operation.
+An important distinction: `accept()` blocks the main server thread, but the worker threads created for previously accepted connections can continue executing independently.
 
-The important distinction is that `accept()` waits for a connection, but it does not prevent already-created worker threads from handling their clients.
-
-### 3. Creating Worker Threads
+### 3. Creating Independent Worker Threads
 
 ```java
 Thread thread = new Thread(
@@ -139,33 +146,39 @@ Thread thread = new Thread(
 thread.start();
 ```
 
-Once a connection is accepted, the server creates a new worker thread.
+After accepting a connection, the server creates a new worker thread.
 
-Each worker thread handles its own client connection.
+Each worker executes the connection handler independently.
 
-**Why multithreading?**
+**Why use multithreading?**
 
-Consider a server receiving three client connections:
+Consider three clients connecting simultaneously:
 
-- Client A establishes a connection.
-- Client B establishes a connection.
-- Client C establishes a connection.
+```text
+Client A ───────> Worker Thread 1
+Client B ───────> Worker Thread 2
+Client C ───────> Worker Thread 3
+```
 
-With a single-threaded blocking handler, one slow client could delay the processing of subsequent clients.
+Each worker manages its own client connection.
 
-With this implementation, each client is assigned a separate worker thread, allowing their connection handlers to execute concurrently.
+If one worker is waiting on a blocking operation, it does not directly stop other worker threads from executing.
 
-### 4. Connection Handling Using Consumer
+This improves concurrency compared with processing all client connections sequentially in a single thread.
+
+### 4. Connection Handling with Consumer and Lambda Expressions
+
+The server uses Java's functional programming capabilities to encapsulate client-handling logic.
 
 ```java
 public Consumer<Socket> getConsumer() {
     return (clientSocket) -> {
         try (
             Socket socket = clientSocket;
-            PrintWriter toSocket =
+            PrintWriter writer =
                 new PrintWriter(socket.getOutputStream(), true)
         ) {
-            toSocket.println(
+            writer.println(
                 "Hello from server " + socket.getInetAddress()
             );
 
@@ -178,21 +191,18 @@ public Consumer<Socket> getConsumer() {
 }
 ```
 
-The `Consumer<Socket>` interface represents an operation that accepts a Socket and performs an action without returning a result.
+**Understanding the implementation:**
 
-Here, a lambda expression implements that operation.
+- `Consumer<Socket>` is a functional interface.
+- It accepts a Socket as input and does not return a value.
+- The lambda expression provides the implementation of the `accept()` method.
+- `getOutputStream()` provides the output stream associated with the client connection.
+- `PrintWriter` makes it convenient to send text.
+- `println()` sends a newline-terminated response.
 
-The connection handler:
+The connection handler is responsible for processing an individual client's communication.
 
-1. Receives the connected client socket.
-2. Obtains the socket's output stream.
-3. Wraps the output stream inside a `PrintWriter`.
-4. Sends a greeting response to the client.
-5. Closes the resources automatically.
-
-### 5. Resource Management
-
-The project uses Java's `try-with-resources` statement.
+### 5. Resource Management with Try-with-Resources
 
 ```java
 try (
@@ -204,120 +214,127 @@ try (
 }
 ```
 
-**Why is this important?**
+Network resources must be released properly.
 
-Network sockets and streams consume system resources.
+The implementation uses Java's try-with-resources statement to automatically close the declared resources when the block finishes.
 
-If they are not closed properly, they may cause resource leaks.
+**Why does this matter?**
 
-Try-with-resources automatically closes resources when execution leaves the block, including when an exception occurs.
+- Prevents sockets from remaining open unnecessarily.
+- Reduces the risk of resource leaks.
+- Simplifies cleanup logic.
+- Ensures resources are closed even when an exception occurs.
 
-This improves resource safety and makes connection handling more reliable.
+`PrintWriter` does not throw `IOException` from its normal write methods; its error status can be checked using `checkError()` when write-failure detection is required.
 
 ---
 
-## 🌐 Networking Concepts Used
+## 🌐 TCP Networking Fundamentals
 
-This project provides practical exposure to several important networking concepts.
+This project provides practical experience with fundamental networking concepts.
 
-| Concept | Explanation |
+| Concept | Meaning |
 |---|---|
-| TCP | A connection-oriented transport protocol that provides reliable, ordered byte-stream delivery |
+| TCP | Connection-oriented transport protocol providing reliable, ordered byte-stream delivery |
 | IP Address | Identifies a host on an IP network |
 | Port | Identifies a communication endpoint on a host |
-| Socket | Endpoint used for communication between two networked processes |
-| ServerSocket | Listens for incoming TCP connections |
-| accept() | Waits for and accepts an incoming connection |
-| Blocking I/O | An operation that waits until the required I/O event occurs |
+| Socket | Communication endpoint used by network applications |
+| ServerSocket | Listens for incoming TCP connection requests |
+| `accept()` | Accepts an incoming connection |
+| Blocking I/O | An operation that waits for an I/O event |
 | InputStream | Reads incoming bytes |
 | OutputStream | Writes outgoing bytes |
-| Connection Lifecycle | Establishment, communication, and termination of a connection |
+| Connection Lifecycle | Connection establishment, communication, and termination |
 
-### TCP Connection Lifecycle
+### TCP Connection Sequence
 
 ```mermaid
 sequenceDiagram
     participant C as Client
+    participant OS as Operating System
     participant S as Server
     participant W as Worker Thread
 
-    C->>S: TCP Connection Request
+    C->>OS: Initiate TCP Connection
+    OS->>S: Connection becomes available
     S->>S: accept()
     S->>W: Create Worker Thread
     W->>C: Send Greeting Response
-    C->>C: Read Server Response
+    C->>C: Read Response
     C->>S: Close Connection
-    W->>W: Close Socket and Streams
+    W->>W: Close Socket and Writer
 ```
 
-**Important:** TCP provides a reliable byte stream, not message boundaries. This implementation sends a newline-terminated text response, which the client reads using `readLine()`.
+**Important networking detail:** TCP provides a continuous stream of bytes rather than independent application messages. This implementation uses a newline-terminated text response, which can be read using a line-oriented client reader.
 
 ---
 
-## 🧵 Concurrency and Multithreading
+## 🧵 Concurrency Model and Multithreading
 
-One of the main learning objectives of this project is understanding how multiple client connections can be handled concurrently.
+### Thread-per-Connection Architecture
 
-### Thread-per-Connection Model
-
-The implementation follows this approach:
+The current implementation assigns one dedicated Java worker thread to every accepted client connection.
 
 ```text
-Incoming Connection
-        |
-        v
-   Accept Connection
-        |
-        v
-  Create New Thread
-        |
-        v
-  Handle Client Request
-        |
-        v
-  Close Connection
+Incoming TCP Connection
+          |
+          v
+     accept()
+          |
+          v
+   Create Worker Thread
+          |
+          v
+    Handle Client I/O
+          |
+          v
+    Send Response
+          |
+          v
+    Close Connection
 ```
 
-Each connection gets its own worker thread.
+### Advantages
 
-### Benefits
+- Independent client connection handling.
+- Concurrent execution of multiple connection handlers.
+- Simple architecture and implementation.
+- Blocking I/O in one worker does not directly block other workers.
 
-- Independent client handling.
-- Concurrent execution of connection handlers.
-- Simpler connection isolation.
-- Blocking operations in one worker do not directly block other workers.
+### Engineering Trade-offs
 
-### Trade-offs
+Thread-per-connection is simple and useful for learning, but unrestricted thread creation has scalability limitations.
 
-Creating one thread per connection is straightforward, but it introduces scalability limitations.
+Every thread introduces memory and scheduling overhead.
 
-Every thread consumes memory and operating-system scheduling resources.
-
-For a very large number of concurrent connections, unrestricted thread creation can result in:
+Under heavy connection loads, this can result in:
 
 - Increased memory consumption.
-- Context-switching overhead.
+- Operating-system context-switching overhead.
 - Thread scheduling contention.
 - Resource exhaustion.
-- Reduced performance under extreme concurrency.
+- Reduced performance at high concurrency.
 
-### Possible Improvements
+### Alternative Architectures
 
-A more scalable architecture could use:
+| Architecture | Working Principle | Main Benefit |
+|---|---|---|
+| Thread-per-Connection | One thread per connection | Simple concurrency model |
+| Thread Pool | Reuses a bounded set of worker threads | Controlled resource usage |
+| Java NIO | Non-blocking channel-based I/O | Efficient I/O management |
+| Selector-Based Server | Monitors multiple channels through an event loop | Handles many connections with fewer threads |
 
-1. **Thread Pool:** Reuse a bounded number of worker threads.
-2. **ExecutorService:** Manage task execution and thread lifecycle.
-3. **Backpressure:** Control incoming work when the server reaches capacity.
-4. **Non-blocking I/O:** Use Java NIO and Selector for event-driven connection management.
-5. **Connection Limits:** Restrict the number of simultaneously accepted connections.
-
-These are potential improvements, not features of the current implementation.
+These alternatives are potential improvements and are not part of the current implementation.
 
 ---
 
-## 🖥️ Multithreaded Client Simulator
+## 🖥️ Multithreaded Java Client Simulator
 
-The project includes `Client.java`, which simulates multiple clients connecting to the server.
+The repository includes a separate Java client simulator that creates multiple concurrent client connections.
+
+Its purpose is to validate that the server can accept and process multiple independent TCP connections.
+
+### Client Execution Logic
 
 ```java
 public static void main(String[] args) {
@@ -332,7 +349,6 @@ public static void main(String[] args) {
     );
 
     for (int i = 0; i < clientCount; i++) {
-
         Thread thread =
             new Thread(client.getRunnable());
 
@@ -343,95 +359,113 @@ public static void main(String[] args) {
 
 ### Execution Flow
 
-1. The client simulator initializes 100 threads.
-2. Each thread creates a TCP socket.
-3. Each socket connects to `localhost:8010`.
-4. The client sends a greeting message.
-5. The client waits for the server's response.
-6. The response is displayed in the console.
-7. The socket and associated streams are closed.
+1. Initialize the client simulator.
+2. Create 100 client threads.
+3. Each thread initiates a TCP socket connection.
+4. Connect to the server on port `8010`.
+5. Read the response from the server.
+6. Display the received response.
+7. Close the connection and associated resources.
 
-This provides a practical demonstration of concurrent client connections.
+This provides a practical demonstration of concurrent TCP client-server communication.
 
 ---
 
-## 📊 Performance Testing and Benchmarking
+## 📊 Apache JMeter: Load Testing and Performance Analysis
 
-To evaluate server behavior under load, Apache JMeter was used.
+Apache JMeter is used to evaluate server performance under simulated concurrent load.
 
-JMeter is a load-testing tool that can generate concurrent requests and collect performance measurements.
+The repository contains preconfigured JMeter test plans for executing load tests in GUI and command-line modes.
 
-### Recorded Benchmark Results
+### 🚀 Benchmark Results
 
-| Performance Metric | Recorded Result |
-|---|---:|
-| Peak Throughput | 23,180+ requests/sec |
-| Total Requests Handled | 1,024,287+ |
-| Average Response Latency | 15 ms |
-| Minimum Response Latency | 0 ms |
-| Reported Error Rate | 0.00% |
+The following figures represent recorded results from the project's benchmark runs.
 
-**Note:** These are recorded results from the project's existing benchmark. Actual performance depends on hardware, operating system, JVM configuration, JMeter settings, network conditions, and test methodology. The figures should not be interpreted as guaranteed production capacity.
+| Metric | Recorded Result | Interpretation |
+|---|---:|---|
+| Peak Throughput | **23,180.2 requests/sec** | Highest recorded processing rate |
+| Total Requests Handled | **1,024,287** | More than one million recorded requests |
+| Average Response Latency | **15 ms** | Recorded average response time |
+| Minimum Response Latency | **0 ms** | Minimum reported measurement |
+| Reported Error Rate | **0.00%** | No errors reported in the recorded test |
 
-### Understanding the Metrics
+### Understanding Performance Metrics
 
 **1. Throughput**
 
-Throughput represents how many requests or operations are processed within a given period.
-
-For example:
+Throughput measures the number of completed requests within a given time interval.
 
 ```text
-Throughput = 10,000 requests/second
+Throughput = Completed Requests / Time
 ```
 
-This means the measured system processes approximately 10,000 requests every second during that measurement interval.
+Example:
+
+```text
+10,000 requests per second
+```
+
+This means that approximately 10,000 requests were completed per second during the measured interval.
 
 **2. Latency**
 
-Latency measures the time taken to complete an operation from the perspective of the measurement tool.
+Latency measures the time taken to complete an operation.
 
 Lower latency generally indicates faster response times.
 
 **3. Error Rate**
 
-The percentage of requests that fail during a test.
+Error rate measures the proportion of failed requests.
 
 ```text
 Error Rate =
 (Failed Requests / Total Requests) × 100
 ```
 
-**4. Concurrent Connections**
+A reported error rate of 0.00% means that no errors were recorded in the corresponding test results.
 
-The number of client connections active at the same time.
+**4. Concurrency**
 
-Concurrency and throughput are related, but they are not the same metric.
+Concurrency describes how many operations or connections are active during overlapping periods.
 
-A system can have many concurrent connections without completing the same number of requests per second.
+Concurrency is not equivalent to throughput.
+
+A system can maintain many concurrent connections without completing the same number of requests per second.
 
 ### Running JMeter Tests
 
-Command-line execution:
+**CLI Mode — Recommended for Benchmarking**
 
 ```bash
 jmeter -n -t web_server_testing.jmx -l test_results.jtl
 ```
 
-GUI execution:
+**GUI Mode — Recommended for Visual Inspection**
 
 ```bash
 jmeter -t web_server_testing.jmx
 ```
 
-Useful JMeter listeners include:
+Useful JMeter listeners:
 
 - Aggregate Report
 - Summary Report
 - View Results Tree
 - View Results in Table
 
-For repeatable benchmarking, document the machine specifications, JVM version, JMeter thread-group configuration, ramp-up period, test duration, and number of iterations.
+### Benchmarking Considerations
+
+Performance results depend on several environmental factors:
+
+- CPU and RAM specifications.
+- Operating system and available resources.
+- JVM version and runtime configuration.
+- Number of JMeter threads.
+- Ramp-up period and test duration.
+- Network conditions.
+- Connection reuse and test-plan configuration.
+
+The recorded results should be treated as measurements from a particular test environment, not guaranteed production capacity.
 
 ---
 
@@ -441,38 +475,38 @@ For repeatable benchmarking, document the machine specifications, JVM version, J
 |---|---|
 | Java 17+ | Core programming language |
 | Java Threads | Concurrent execution |
-| `ServerSocket` | TCP server-side connection listening |
+| `ServerSocket` | Server-side TCP connection listening |
 | `Socket` | Client-server communication |
 | Java I/O | Stream-based communication |
 | Lambda Expressions | Functional connection-handler implementation |
 | `Consumer<Socket>` | Encapsulation of connection-handling logic |
 | Try-with-resources | Automatic resource management |
-| Apache JMeter | Load testing and performance analysis |
+| Apache JMeter 5.6.3 | Load testing and performance evaluation |
 
-No Spring Boot, Netty, or external web-server framework is required.
+**Design decision:** The implementation intentionally uses Core Java networking APIs rather than high-level web frameworks to expose the underlying connection-handling mechanics.
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```text
 Multithreaded-web-server/
 │
 ├── Server.java
-│   └── TCP server, connection listener,
-│       worker thread creation and response handling
+│   └── TCP server initialization,
+│       connection listener and worker thread creation
 │
 ├── Client.java
 │   └── Multithreaded client simulator
 │
 ├── web_server_testing.jmx
-│   └── Apache JMeter test configuration
+│   └── Apache JMeter load-testing configuration
 │
 ├── Thread Group.jmx
-│   └── Additional JMeter thread-group test plan
+│   └── Additional JMeter test configuration
 │
 ├── .gitignore
-│   └── Git ignore configuration
+│   └── Git ignore rules
 │
 └── README.md
     └── Project documentation
@@ -484,7 +518,7 @@ Multithreaded-web-server/
 
 ### Prerequisites
 
-- JDK 17 or higher.
+- Java Development Kit (JDK 17 or higher).
 - Git.
 - Apache JMeter 5.6.3 or higher (optional, for load testing).
 
@@ -496,7 +530,7 @@ git clone https://github.com/Mayank1036/Multithreaded-web-server.git
 cd Multithreaded-web-server
 ```
 
-### 2. Compile the Java Files
+### 2. Compile the Java Source Files
 
 ```bash
 javac Server.java Client.java
@@ -523,16 +557,11 @@ Open another terminal in the project directory.
 java Client
 ```
 
-Expected client output:
+The client simulator will launch its parallel client threads and print the server responses.
 
-```text
-[+] Launching 100 parallel client threads...
-[Client Thread] Server response: Hello from server ...
-```
+### 5. Execute Load Tests
 
-### 5. Run Performance Tests
-
-With the server running, execute:
+With the server running:
 
 ```bash
 jmeter -n -t web_server_testing.jmx -l test_results.jtl
@@ -542,41 +571,43 @@ jmeter -n -t web_server_testing.jmx -l test_results.jtl
 
 ## ⚠️ Current Scope and Limitations
 
-This project focuses on TCP socket programming and concurrent connection handling. It is not intended to be a production-ready HTTP server.
+This project focuses on TCP networking and concurrent connection handling. Despite the repository's web-server naming, the current implementation is a TCP server and does not implement the HTTP protocol.
 
-Current limitations:
+Current limitations include:
 
-- No HTTP request parsing or HTTP status codes.
-- No request routing or REST API endpoints.
-- One dedicated thread is created per accepted connection.
-- No bounded thread pool or admission control.
+- No HTTP request parsing or HTTP response status codes.
+- No REST API endpoints or request routing.
+- No bounded thread pool.
+- No explicit maximum connection limit.
 - No connection timeout or idle-connection management.
-- No application-level authentication or authorization.
-- No structured logging or monitoring system.
-- No graceful shutdown mechanism beyond normal process termination.
+- No authentication or authorization.
+- No structured logging or monitoring.
+- No dedicated graceful shutdown mechanism.
+- No production-grade error-handling or overload-management strategy.
 
-Understanding these limitations is part of understanding the design and its trade-offs.
+Documenting these limitations is important because it distinguishes the implemented system from a production HTTP server.
 
 ---
 
 ## 🔮 Future Enhancements
 
-The following improvements can evolve this project into a more scalable networking system:
+The project can be evolved into a more scalable networking system through the following improvements.
 
-| Enhancement | Learning Objective |
+| Enhancement | Engineering Concept |
 |---|---|
-| Thread Pool using ExecutorService | Controlled concurrency and thread reuse |
-| Java NIO | Non-blocking networking |
-| Selector API | Event-driven connection management |
-| HTTP/1.1 Parsing | HTTP protocol fundamentals |
-| Connection Timeout | Resource lifecycle management |
-| Graceful Shutdown | Reliable server termination |
-| Structured Logging | Production observability |
+| ExecutorService | Thread-pool management |
+| Bounded Thread Pool | Resource control |
+| Java NIO | Non-blocking I/O |
+| Selector API | Event-driven networking |
+| HTTP/1.1 Parser | HTTP protocol implementation |
+| Connection Timeout | Connection lifecycle management |
+| Graceful Shutdown | Controlled server termination |
+| Structured Logging | Observability |
 | Metrics Collection | Performance monitoring |
 | Backpressure | Overload management |
-| Docker Support | Containerization and deployment |
+| Docker | Containerization |
 
-### Potential Architectural Evolution
+### Proposed Future Architecture
 
 ```mermaid
 flowchart TD
@@ -592,27 +623,26 @@ flowchart TD
     E --> J["Logging and Metrics"]
 ```
 
-This diagram represents a proposed future architecture, not the current implementation.
+This is a proposed architectural evolution, not the current implementation.
 
 ---
 
 ## 🧠 Key Engineering Concepts Demonstrated
 
-By building this project, the following concepts were explored:
+This project provides hands-on experience with:
 
 - TCP/IP networking fundamentals.
 - Client-server architecture.
-- Socket programming in Java.
+- Java socket programming.
 - Blocking I/O operations.
-- Thread-per-connection concurrency model.
-- Thread lifecycle and independent execution.
-- Java functional interfaces.
-- Lambda expressions.
+- Thread-per-connection architecture.
+- Thread lifecycle and concurrent execution.
+- Java functional interfaces and lambda expressions.
 - Exception handling in network applications.
 - Automatic resource management.
 - Load testing and performance benchmarking.
 - Throughput, latency, and error-rate analysis.
-- Scalability trade-offs in concurrent systems.
+- Concurrency and scalability trade-offs.
 
 ---
 
@@ -622,12 +652,17 @@ By building this project, the following concepts were explored:
 
 B.Tech Computer Science Engineering | Artificial Intelligence & Data Science
 
-Interested in Backend Engineering, Computer Networks, Distributed Systems, and High-Performance Software.
+Interested in Backend Engineering, Computer Networks, Distributed Systems, and High-Performance Software Engineering.
 
-- GitHub: https://github.com/Mayank1036
-- LinkedIn: https://www.linkedin.com/in/mayank-saini-4860a4210/
+- GitHub: [Mayank1036](https://github.com/Mayank1036)
+- LinkedIn: [Mayank Saini](https://www.linkedin.com/in/mayank-saini-4860a4210/)
 
 ---
 
-⭐ If you find this project useful for understanding Java networking and multithreaded server architecture, consider giving the repository a star.
+<p align="center">
+  <b>Understanding networking from the socket level, one connection at a time.</b>
+</p>
 
+<p align="center">
+  ⭐ If you find this project useful, consider giving the repository a star!
+</p>
